@@ -24,13 +24,16 @@ $ ->
   endFile = (filename) ->
     console.log("#{filename} finished")
 
+    buffer = buffers[filename]
+    delete buffers[filename]
+
     window.requestFileSystem TEMPORARY, 1024 * 1024 * 1024, (fs) ->
       fs.root.getFile filename, { create: true }, (entry) ->
         entry.createWriter (writer) ->
-          writer.onwriteend = (e) -> console.log(entry.toURL())
+          writer.onwriteend = (e) -> fileWritten(filename, entry)
           writer.onerror = (e) -> console.log("Error: #{e.toString()}")
 
-          blob = new Blob(buffers[filename], type: "application/octet-binary")
+          blob = new Blob(buffer, type: "application/octet-binary")
           writer.write(blob)
         , ->
           alert("Unable to create writer")
@@ -38,6 +41,16 @@ $ ->
         alert("Unable to get file")
     , ->
       alert("Unable to receive #{filename}. Did you deny us access?")
+
+  fileWritten = (filename, entry) ->
+    fileLink = $("<a>").
+      prop("href", entry.toURL()).
+      text(filename)
+
+    $("<li>").
+      append("#{new Date().toString()}: ").
+      append(fileLink).
+      appendTo("#files")
 
   messageStream = new EventSource("/stream")
   messageStream.addEventListener "FILEDATA", (e) ->

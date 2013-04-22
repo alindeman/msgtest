@@ -6,25 +6,25 @@ require 'slim'
 require 'rhino'
 require 'coffee-script'
 
-require_relative 'lib/message_broker'
+require_relative 'lib/torquebox_message_broker'
 require_relative 'lib/sse_publisher'
 require_relative 'lib/file_chunker'
 
 require 'sinatra'
+
+broker = TorqueboxMessageBroker.new
 
 get '/' do
   slim :index
 end
 
 post '/message' do
-  broker = MessageBroker.new
   broker.send_to_all(params)
 
   status 201
 end
 
 post '/file' do
-  broker = MessageBroker.new
   chunks = FileChunker.new(params[:file][:tempfile])
 
   begin
@@ -44,8 +44,7 @@ get '/stream', provides: 'text/event-stream' do
   headers['Transfer-Encoding'] = 'chunked'
 
   stream do |out|
-    broker = MessageBroker.new
-    sse    = SsePublisher.new(out)
+    sse = SsePublisher.new(out)
 
     sse.publish("HELLO", hello: "world")
     broker.receive do |message|

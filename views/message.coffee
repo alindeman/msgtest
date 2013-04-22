@@ -24,24 +24,20 @@ $ ->
   endFile = (filename) ->
     console.log("#{filename} finished")
 
-    window.webkitStorageInfo.requestQuota PERSISTENT, 1024 * 1024 * 1024, (grantedBytes) ->
-      window.requestFileSystem PERSISTENT, grantedBytes, (fs) ->
-        fs.root.getFile filename, { create: true }, (entry) ->
-          entry.createWriter (writer) ->
-            writer.onwriteend = (e) -> console.log(entry.toURL())
-            writer.onerror = (e) -> console.log("Error: #{e.toString()}")
+    window.requestFileSystem TEMPORARY, 1024 * 1024 * 1024, (fs) ->
+      fs.root.getFile filename, { create: true }, (entry) ->
+        entry.createWriter (writer) ->
+          writer.onwriteend = (e) -> console.log(entry.toURL())
+          writer.onerror = (e) -> console.log("Error: #{e.toString()}")
 
-            blob = new Blob(buffers[filename], type: "application/octet-binary")
-            writer.write(blob)
-          , ->
-            alert("Unable to create writer")
+          blob = new Blob(buffers[filename], type: "application/octet-binary")
+          writer.write(blob)
         , ->
-          alert("Unable to get file")
+          alert("Unable to create writer")
       , ->
-        alert("Unable to receive #{filename}. Did you deny us access?")
+        alert("Unable to get file")
     , ->
       alert("Unable to receive #{filename}. Did you deny us access?")
-
 
   messageStream = new EventSource("/stream")
   messageStream.addEventListener "FILEDATA", (e) ->
